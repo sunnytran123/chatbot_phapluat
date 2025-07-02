@@ -5,45 +5,153 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Trợ lý ảo Hỏi đáp Pháp luật</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body, html {
+      height: 100%;
+      overflow: hidden;
+    }
+    .sidebar {
+      width: 260px;
+      background: #f8f9fa;
+      border-right: 1px solid #ddd;
+      overflow-y: auto;
+      padding: 1rem;
+      height: 100vh;
+    }
+    .chat-container {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+      background: #f1f3f5;
+    }
+    .message {
+      margin-bottom: 1rem;
+    }
+    .message.user {
+      text-align: right;
+    }
+    .message.ai {
+      text-align: left;
+    }
+    .history-item {
+      cursor: pointer;
+      padding: 0.5rem;
+      border-radius: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .history-item:hover {
+      background: #e9ecef;
+    }
+    .history-text {
+      flex-grow: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  </style>
 </head>
-<body class="bg-light">
-  <div class="min-vh-100 d-flex flex-column align-items-center justify-content-center p-4">
-    <h1 class="h3 fw-bold text-primary mb-4">Trợ lý ảo Hỏi đáp Pháp luật</h1>
-    
-    <div class="w-100" style="max-width: 672px;">
-      <div class="card shadow">
-        <div class="card-body p-4">
-          
-          <div id="responseArea" class="border rounded p-3 mb-3 bg-light" style="height: 384px; overflow-y: auto;">
-            <p class="text-muted fst-italic">Câu trả lời sẽ hiển thị ở đây...</p>
-          </div>
-          
-          <div class="d-flex flex-column flex-sm-row gap-2">
-            <textarea id="userInput" class="form-control" rows="3" placeholder="Nhập câu hỏi về quy định pháp luật..."></textarea>
-            <div class="d-flex gap-2">
-              <button id="sendButton" class="btn btn-primary">Gửi</button>
-              <button id="clearButton" class="btn btn-outline-secondary">Xóa</button>
-            </div>
-          </div>
+<body>
 
-        </div>
-      </div>
-    </div>
+<div class="d-flex h-100">
+  <!-- Sidebar lịch sử -->
+  <div class="sidebar d-flex flex-column">
+    <h5 class="fw-bold mb-3 text-primary">Lịch sử Chat</h5>
+    <div id="historyList" class="flex-grow-1 mb-3"></div>
+    <button class="btn btn-primary mb-2" id="newChat">Đoạn chat mới</button>
   </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Khu vực chat chính -->
+  <div class="chat-container">
+    <div class="chat-messages" id="chatArea">
+      <p class="text-muted fst-italic">Chào bạn! Hãy đặt câu hỏi về pháp luật...</p>
+    </div>
+
+    <div class="border-top p-3 d-flex gap-2">
+      <textarea id="userInput" class="form-control" rows="2" placeholder="Nhập câu hỏi..."></textarea>
+      <button id="sendButton" class="btn btn-primary">Gửi</button>
+    </div>
+  </div>
+</div>
 
 <script>
+const chatArea = document.getElementById('chatArea');
 const userInput = document.getElementById('userInput');
 const sendButton = document.getElementById('sendButton');
-const clearButton = document.getElementById('clearButton');
-const responseArea = document.getElementById('responseArea');
+const newChatBtn = document.getElementById('newChat');
+const historyList = document.getElementById('historyList');
 
+let currentChat = [];
+let allChats = JSON.parse(localStorage.getItem('chatHistory')) || [];
+let currentChatIndex = -1; // -1 là đoạn chat mới, >=0 là đoạn chat cũ đang tiếp tục
+
+// Hiển thị danh sách lịch sử
+function renderHistory() {
+  historyList.innerHTML = "";
+  allChats.forEach((chat, index) => {
+    const item = document.createElement('div');
+    item.className = 'history-item';
+
+    const text = document.createElement('div');
+    text.className = 'history-text';
+    text.textContent = chat.messages?.[0]?.content?.slice(0, 30) || `Đoạn chat ${index + 1}`;
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn btn-sm btn-outline-danger';
+    delBtn.textContent = 'Xóa';
+    delBtn.onclick = (e) => {
+      e.stopPropagation();
+      if (confirm('Xác nhận xóa đoạn chat này?')) {
+        allChats.splice(index, 1);
+        localStorage.setItem('chatHistory', JSON.stringify(allChats));
+        renderHistory();
+      }
+    };
+
+    item.appendChild(text);
+    item.appendChild(delBtn);
+    item.onclick = () => loadChat(index);
+    historyList.appendChild(item);
+  });
+}
+renderHistory();
+
+// Tải đoạn chat cũ để tiếp tục
+function loadChat(index) {
+  const selectedChat = allChats[index];
+  if (!selectedChat) return;
+
+  currentChatIndex = index;
+  currentChat = JSON.parse(JSON.stringify(selectedChat.messages));
+  chatArea.innerHTML = "";
+  currentChat.forEach(msg => renderMessage(msg.role, msg.content));
+}
+
+// Hiển thị tin nhắn
+function renderMessage(role, content) {
+  const div = document.createElement('div');
+  div.className = `message ${role}`;
+  div.innerHTML = `<div class="p-2 rounded bg-${role === 'user' ? 'primary text-white' : 'light'} d-inline-block">${content}</div>`;
+  chatArea.appendChild(div);
+  chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+// Gửi câu hỏi
 sendButton.addEventListener('click', async () => {
   const question = userInput.value.trim();
-  if (!question) return alert('Vui lòng nhập câu hỏi!');
+  if (!question) return;
 
-  responseArea.innerHTML += `<p class="text-primary fw-semibold mb-2">Bạn: ${question}</p>`;
+  renderMessage('user', question);
+  currentChat.push({ role: 'user', content: question });
+  userInput.value = '';
 
   try {
     const res = await fetch('http://127.0.0.1:5000/hoi_dap', {
@@ -53,18 +161,43 @@ sendButton.addEventListener('click', async () => {
     });
     const data = await res.json();
 
-    responseArea.innerHTML += `<p class="text-dark mb-3">Trợ lý: ${data.tra_loi || 'Không có câu trả lời phù hợp.'}</p>`;
+    const answer = data.tra_loi || 'Không có câu trả lời phù hợp.';
+    renderMessage('ai', answer);
+    currentChat.push({ role: 'ai', content: answer });
+
+    if (currentChatIndex >= 0) {
+      allChats[currentChatIndex].messages = JSON.parse(JSON.stringify(currentChat));
+    }
+
   } catch (err) {
-    responseArea.innerHTML += `<p class="text-danger mb-3">Lỗi: Không thể kết nối tới máy chủ.</p>`;
+    renderMessage('ai', 'Lỗi: Không thể kết nối tới máy chủ.');
   }
 
-  responseArea.scrollTop = responseArea.scrollHeight;
-  userInput.value = '';
+  if (currentChatIndex === -1) {
+    allChats.push({ messages: JSON.parse(JSON.stringify(currentChat)) });
+    currentChatIndex = allChats.length - 1;
+  } else {
+    allChats[currentChatIndex].messages = JSON.parse(JSON.stringify(currentChat));
+  }
+
+  localStorage.setItem('chatHistory', JSON.stringify(allChats));
+  renderHistory();
 });
 
-clearButton.addEventListener('click', () => {
-  userInput.value = '';
-  responseArea.innerHTML = '<p class="text-muted fst-italic">Câu trả lời sẽ hiển thị ở đây...</p>';
+// Tạo đoạn chat mới
+newChatBtn.addEventListener('click', () => {
+  if (currentChat.length) {
+    if (currentChatIndex === -1) {
+      allChats.push({ messages: JSON.parse(JSON.stringify(currentChat)) });
+    } else {
+      allChats[currentChatIndex].messages = JSON.parse(JSON.stringify(currentChat));
+    }
+    localStorage.setItem('chatHistory', JSON.stringify(allChats));
+    renderHistory();
+  }
+  currentChat = [];
+  currentChatIndex = -1;
+  chatArea.innerHTML = `<p class="text-muted fst-italic">Chào bạn! Hãy đặt câu hỏi về pháp luật...</p>`;
 });
 </script>
 
