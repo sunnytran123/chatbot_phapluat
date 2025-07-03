@@ -17,6 +17,7 @@
       overflow-y: auto;
       padding: 1rem;
       height: 100vh;
+      position: relative;
     }
     .chat-container {
       flex: 1;
@@ -57,19 +58,41 @@
       text-overflow: ellipsis;
       white-space: nowrap;
     }
+    .upload-btn {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 50%;
+      width: 42px;
+      height: 42px;
+      font-size: 24px;
+      line-height: 40px;
+      text-align: center;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+    }
+    .upload-btn:hover {
+      background: #e9ecef;
+    }
   </style>
 </head>
 <body>
 
 <div class="d-flex h-100">
-  <!-- Sidebar lịch sử -->
+
   <div class="sidebar d-flex flex-column">
     <h5 class="fw-bold mb-3 text-primary">Lịch sử Chat</h5>
     <div id="historyList" class="flex-grow-1 mb-3"></div>
     <button class="btn btn-primary mb-2" id="newChat">Đoạn chat mới</button>
+
+    <!-- Icon Upload -->
+    <div class="upload-btn" id="uploadBtn">+</div>
+    <input type="file" id="fileInput" hidden accept=".pdf,.docx">
   </div>
 
-  <!-- Khu vực chat chính -->
   <div class="chat-container">
     <div class="chat-messages" id="chatArea">
       <p class="text-muted fst-italic">Chào bạn! Hãy đặt câu hỏi về pháp luật...</p>
@@ -88,12 +111,13 @@ const userInput = document.getElementById('userInput');
 const sendButton = document.getElementById('sendButton');
 const newChatBtn = document.getElementById('newChat');
 const historyList = document.getElementById('historyList');
+const uploadBtn = document.getElementById('uploadBtn');
+const fileInput = document.getElementById('fileInput');
 
 let currentChat = [];
 let allChats = JSON.parse(localStorage.getItem('chatHistory')) || [];
-let currentChatIndex = -1; // -1 là đoạn chat mới, >=0 là đoạn chat cũ đang tiếp tục
+let currentChatIndex = -1;
 
-// Hiển thị danh sách lịch sử
 function renderHistory() {
   historyList.innerHTML = "";
   allChats.forEach((chat, index) => {
@@ -124,7 +148,6 @@ function renderHistory() {
 }
 renderHistory();
 
-// Tải đoạn chat cũ để tiếp tục
 function loadChat(index) {
   const selectedChat = allChats[index];
   if (!selectedChat) return;
@@ -135,7 +158,6 @@ function loadChat(index) {
   currentChat.forEach(msg => renderMessage(msg.role, msg.content));
 }
 
-// Hiển thị tin nhắn
 function renderMessage(role, content) {
   const div = document.createElement('div');
   div.className = `message ${role}`;
@@ -144,7 +166,6 @@ function renderMessage(role, content) {
   chatArea.scrollTop = chatArea.scrollHeight;
 }
 
-// Gửi câu hỏi
 sendButton.addEventListener('click', async () => {
   const question = userInput.value.trim();
   if (!question) return;
@@ -184,7 +205,6 @@ sendButton.addEventListener('click', async () => {
   renderHistory();
 });
 
-// Tạo đoạn chat mới
 newChatBtn.addEventListener('click', () => {
   if (currentChat.length) {
     if (currentChatIndex === -1) {
@@ -198,6 +218,43 @@ newChatBtn.addEventListener('click', () => {
   currentChat = [];
   currentChatIndex = -1;
   chatArea.innerHTML = `<p class="text-muted fst-italic">Chào bạn! Hãy đặt câu hỏi về pháp luật...</p>`;
+});
+
+uploadBtn.addEventListener('click', () => {
+  fileInput.click();
+});
+
+fileInput.addEventListener('change', async () => {
+  const file = fileInput.files[0];
+  if (!file) return alert('Vui lòng chọn file PDF hoặc Word!');
+
+  if (!file.name.endsWith('.pdf') && !file.name.endsWith('.docx')) {
+    return alert('Chỉ hỗ trợ file .pdf hoặc .docx');
+  }
+
+  const fakePath = "C:/Users/phuon/Desktop/luat/" + file.name;
+
+  uploadBtn.innerHTML = `<div class="spinner-border spinner-border-sm text-primary"></div>`;
+
+  try {
+    const res = await fetch('http://127.0.0.1:5000/them_file', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ duong_dan: fakePath })
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      alert(data.thong_bao);
+    } else {
+      alert('Lỗi: ' + data.thong_bao);
+    }
+  } catch (err) {
+    alert('Lỗi: Không thể kết nối tới máy chủ.');
+  } finally {
+    uploadBtn.innerHTML = '+';
+    fileInput.value = '';
+  }
 });
 </script>
 
