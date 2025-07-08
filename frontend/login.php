@@ -29,7 +29,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 $_SESSION["username"] = $username;
                 $_SESSION["role"] = $resData["role"];
 
-                header("Location: indexnew.php");
+                header("Location: index.php");
                 exit();
             } else {
                 $thong_bao = "Sai tài khoản hoặc mật khẩu.";
@@ -54,21 +54,26 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <body class="bg-light d-flex justify-content-center align-items-center" style="height:100vh;">
 
 <div class="card p-4" style="min-width: 300px;">
-    <h4 class="mb-3">Đăng nhập</h4>
+<h4 class="mb-3 text-center">Đăng nhập</h4>
     <?php if (isset($thong_bao)): ?>
         <div class="alert alert-danger"><?php echo $thong_bao; ?></div>
     <?php endif; ?>
     <form method="post">
-        <div class="mb-3">
-            <label class="form-label">Tài khoản</label>
-            <input type="text" name="username" class="form-control" required>
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Mật khẩu</label>
-            <input type="password" name="password" class="form-control" required>
-        </div>
-        <button class="btn btn-primary w-100">Đăng nhập</button>
-    </form>
+    <div class="mb-3">
+        <label class="form-label">Tài khoản</label>
+        <input type="text" name="username" class="form-control" required>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Mật khẩu</label>
+        <input type="password" name="password" class="form-control" required>
+    </div>
+    <button class="btn btn-primary w-100">Đăng nhập</button>
+
+    <div class="text-center mt-3">
+        <span>Chưa có tài khoản? <a href="register.php">Đăng ký tại đây</a></span>
+    </div>
+</form>
+
 </div>
 
 </body>

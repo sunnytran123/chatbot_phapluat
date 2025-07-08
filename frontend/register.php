@@ -33,13 +33,40 @@ if (isset($_POST['register'])) {
 }
 ?>
 
-<form method="POST">
-    <h2>Đăng ký</h2>
-    <input type="text" name="username" placeholder="Tài khoản" required><br>
-    <input type="password" name="password" placeholder="Mật khẩu" required><br>
-    <input type="password" name="confirm_password" placeholder="Nhập lại mật khẩu" required><br>
-    <button type="submit" name="register">Đăng ký</button>
-</form>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <title>Đăng ký</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light d-flex justify-content-center align-items-center" style="height:100vh;">
 
-<?php if (!empty($error)) echo "<p style='color:red;'>$error</p>"; ?>
-<p><a href="login.php">Đã có tài khoản? Đăng nhập</a></p>
+<div class="card p-4" style="min-width: 300px;">
+<h4 class="mb-3 text-center" style="color:#333;">Đăng ký</h4>
+    <?php if (!empty($error)): ?>
+        <div class="alert alert-danger"><?php echo $error; ?></div>
+    <?php endif; ?>
+    <form method="POST">
+        <div class="mb-3">
+            <label class="form-label">Tài khoản</label>
+            <input type="text" name="username" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Mật khẩu</label>
+            <input type="password" name="password" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Nhập lại mật khẩu</label>
+            <input type="password" name="confirm_password" class="form-control" required>
+        </div>
+        <button type="submit" name="register" class="btn btn-success w-100">Đăng ký</button>
+
+        <div class="text-center mt-3">
+            <span>Đã có tài khoản? <a href="login.php">Đăng nhập tại đây</a></span>
+        </div>
+    </form>
+</div>
+
+</body>
+</html>
